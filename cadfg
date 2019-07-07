@@ -1,0 +1,105 @@
+#!/bin/sh
+
+# Copyright (c) 2019 Thomas Frohwein <11335318+rfht@users.noreply.github.com>
+# Permission to use, copy, modify, and/or distribute this software for
+# any purpose with or without fee is hereby granted, provided that the
+# above copyright notice and this permission notice appear in all
+# copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+# WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+# DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+# PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+# PERFORMANCE OF THIS SOFTWARE.
+
+# cadfg - cvs (and don't forget git)
+#
+# interact with both a CVS and git repository simultaneously
+
+# TODO:
+# check TODO tags
+# check FIXME tags
+# implement all not_implemented
+
+SAVEIFS=$IFS
+
+usage()
+{
+	cat << EOF
+cadfg add|a
+cadfg commit|cm
+cadfg diff|d
+cadfg help|h|-h|--help
+cadfg init|i
+cadfg status|s
+EOF
+	exit
+}
+
+not_implemented()
+{
+	echo "Not implemented yet."
+	exit 1
+}
+
+cadfg_add()
+{
+	cvs add $*
+	git add $*
+}
+
+cadfg_commit()
+{
+	IFS="
+"
+	cvs commit "$@"
+	git commit -a "$@"
+	IFS=$SAVEIFS
+
+	# TODO: check that git remote is set up
+	git push
+}
+
+case "$1" in
+	add|a)MODE=add;;
+	commit|cm)MODE=commit;;
+	diff|d)not_implemented;;
+	init|i)not_implemented;;
+	remove|rm)not_implemented;;
+	status|s)not_implemented;;
+	help|h|--help|-h|*) usage;;
+esac
+shift
+
+# Are ./CVS and ./.git present? Stop if not.
+
+if [ \( ! -d CVS \) -o \( ! -d .git \) ] ; then
+	echo "Error: either or both of CVS/git not set up."
+	exit 1
+fi
+
+# TODO: check .gitignore and .cvsignore??
+
+# TODO: check if git and cvs commands are available
+
+# sanitize args (whitespace!) - see https://stackoverflow.com/questions/3755772/how-to-preserve-double-quotes-in-in-a-shell-script
+
+_args=
+for arg in "$@"; do
+	# check if there's whitespace in the argument, if so quote it again
+	if $(echo "$arg" | grep -Eqm 1 "[[:blank:]]"); then
+		#arg="\""$arg"\""
+		arg=$(echo "$arg" | sed -E 's|[[:blank:]]|\\ |g')
+	fi
+	_args=$_args" "$arg
+done
+
+case "$MODE" in
+	add) cadfg_add $_args;;
+	commit) IFS="
+"; cadfg_commit "$@"; IFS=$SAVEIFS;;
+	*) not_implemented;;
+esac
