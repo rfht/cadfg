@@ -63,10 +63,19 @@ cadfg_commit()
 	git push
 }
 
+cadfg_diff()
+{
+	IFS="
+"
+	cvs -q diff "$@" | less
+	git diff "$@"
+	IFS=$SAVEIFS
+}
+
 case "$1" in
 	add|a)MODE=add;;
 	commit|cm)MODE=commit;;
-	diff|d)not_implemented;;
+	diff|d)MODE=diff;;
 	init|i)not_implemented;;
 	remove|rm)not_implemented;;
 	status|s)not_implemented;;
@@ -101,5 +110,7 @@ case "$MODE" in
 	add) cadfg_add $_args;;
 	commit) IFS="
 "; cadfg_commit "$@"; IFS=$SAVEIFS;;
+	diff) IFS="
+"; cadfg_diff "$@"; IFS=$SAVEIFS;;
 	*) not_implemented;;
 esac
