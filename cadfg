@@ -67,7 +67,7 @@ cadfg_diff()
 {
 	IFS="
 "
-	cvs -q diff "$@" | less
+	cvs -q diff "$@" | more
 	git diff "$@"
 	IFS=$SAVEIFS
 }
